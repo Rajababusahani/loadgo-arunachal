@@ -13,9 +13,9 @@ services:
       - key: PORT
         value: 10000
       - key: USE_MOCK_SERVICES
-        value: false
+        value: true
       - key: USE_IN_MEMORY_DB
-        value: false
+        value: true
       - key: JWT_RATE_LIMIT_WINDOW_MS
         value: 900000
       - key: JWT_RATE_LIMIT_MAX
