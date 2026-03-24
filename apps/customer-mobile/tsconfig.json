@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": [
+      "nativewind/types",
+      "node"
+    ]
+  },
+  "include": [
+    "app",
+    "components",
+    "hooks",
+    "lib",
+    "providers",
+    "nativewind-env.d.ts",
+    "react-native.d.ts"
+  ]
+}

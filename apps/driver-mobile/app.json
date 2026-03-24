@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "LoadGo Driver",
+    "slug": "loadgo-arunachal-driver",
+    "scheme": "loadgo-driver",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.loadgo.driver"
+    }
+  }
+}

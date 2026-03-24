@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "bookingTracking": {
+      "$bookingId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "bookingStatus": {
+      "$bookingId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}

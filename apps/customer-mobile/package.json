@@ -1,0 +1,30 @@
+{
+  "name": "@loadgo/customer-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "android": "expo run:android",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "echo customer app tests not configured yet"
+  },
+  "dependencies": {
+    "@loadgo/shared": "0.1.0",
+    "@react-native-async-storage/async-storage": "^2.1.0",
+    "expo": "^52.0.23",
+    "expo-location": "^18.0.10",
+    "expo-router": "^4.0.16",
+    "firebase": "^11.1.0",
+    "nativewind": "^4.1.23",
+    "react": "18.3.1",
+    "react-native": "0.76.6",
+    "react-native-maps": "1.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}

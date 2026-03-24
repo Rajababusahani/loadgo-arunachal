@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "LoadGo Arunachal",
+    "slug": "loadgo-arunachal-customer",
+    "scheme": "loadgo-customer",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.loadgo.customer"
+    }
+  }
+}
