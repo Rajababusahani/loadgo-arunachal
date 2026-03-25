@@ -1,14 +1,16 @@
+import auth from "@react-native-firebase/auth";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:4000";
-const CUSTOMER_TOKEN = process.env.EXPO_PUBLIC_CUSTOMER_TOKEN ?? "";
 
 type JsonBody = Record<string, unknown> | undefined;
 
-function getAuthHeaders() {
-  if (!CUSTOMER_TOKEN) {
-    throw new Error("Customer auth token is missing. Set EXPO_PUBLIC_CUSTOMER_TOKEN or wire Firebase phone auth.");
+async function getAuthHeaders() {
+  const token = await auth().currentUser?.getIdToken();
+  if (!token) {
+    throw new Error("Customer auth token is missing. Sign in again.");
   }
 
-  return { Authorization: `Bearer ${CUSTOMER_TOKEN}` };
+  return { Authorization: `Bearer ${token}` };
 }
 
 async function request<T>(path: string, init?: RequestInit, body?: JsonBody): Promise<T> {
@@ -16,7 +18,7 @@ async function request<T>(path: string, init?: RequestInit, body?: JsonBody): Pr
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...getAuthHeaders(),
+      ...(await getAuthHeaders()),
       ...(init?.headers ?? {})
     },
     body: body ? JSON.stringify(body) : init?.body
@@ -30,8 +32,8 @@ async function request<T>(path: string, init?: RequestInit, body?: JsonBody): Pr
   return response.json() as Promise<T>;
 }
 
-export function getCustomerToken() {
-  return CUSTOMER_TOKEN;
+export async function getCustomerToken() {
+  return auth().currentUser?.getIdToken() ?? null;
 }
 
 export function apiGet<T>(path: string): Promise<T> {

@@ -21,5 +21,15 @@ Monorepo for the LoadGo Arunachal MVP:
 - `render.yaml`: production-first Render blueprint for the real app
 - `render.demo.yaml`: demo-only Render blueprint with mock services enabled
 
+## Mobile Auth
+
+The Android apps now use native Firebase phone authentication.
+
+Required local files:
+- `apps/customer-mobile/google-services.json`
+- `apps/driver-mobile/google-services.json`
+
+Expo Go is not supported for these apps anymore. Use dev-client or an Android build.
+
 See `docs/deployment.md` for deployment details and environment setup.
 See `docs/local-dev.md` for the local mock-mode workflow and dev tokens.

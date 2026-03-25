@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "expo start",
+    "dev": "expo start --dev-client",
     "android": "expo run:android",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "echo customer app tests not configured yet"
@@ -12,7 +12,10 @@
   "dependencies": {
     "@loadgo/shared": "0.1.0",
     "@react-native-async-storage/async-storage": "^2.1.0",
+    "@react-native-firebase/app": "^23.8.8",
+    "@react-native-firebase/auth": "^23.8.8",
     "expo": "^52.0.23",
+    "expo-dev-client": "^55.0.18",
     "expo-location": "^18.0.10",
     "expo-router": "^4.0.16",
     "firebase": "^11.1.0",

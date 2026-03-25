@@ -1,16 +1,17 @@
 import { Linking } from "react-native";
+import auth from "@react-native-firebase/auth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:4000";
-const DRIVER_TOKEN = process.env.EXPO_PUBLIC_DRIVER_TOKEN ?? "";
 
 type JsonBody = Record<string, unknown> | undefined;
 
-function getAuthHeaders() {
-  if (!DRIVER_TOKEN) {
-    throw new Error("Driver auth token is missing. Set EXPO_PUBLIC_DRIVER_TOKEN or wire Firebase phone auth.");
+async function getAuthHeaders() {
+  const token = await auth().currentUser?.getIdToken();
+  if (!token) {
+    throw new Error("Driver auth token is missing. Sign in again.");
   }
 
-  return { Authorization: `Bearer ${DRIVER_TOKEN}` };
+  return { Authorization: `Bearer ${token}` };
 }
 
 async function request<T>(path: string, init?: RequestInit, body?: JsonBody): Promise<T> {
@@ -18,7 +19,7 @@ async function request<T>(path: string, init?: RequestInit, body?: JsonBody): Pr
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...getAuthHeaders(),
+      ...(await getAuthHeaders()),
       ...(init?.headers ?? {})
     },
     body: body ? JSON.stringify(body) : init?.body
@@ -44,8 +45,8 @@ export function apiPatch<T>(path: string, body?: JsonBody): Promise<T> {
   return request<T>(path, { method: "PATCH" }, body);
 }
 
-export function getDriverToken() {
-  return DRIVER_TOKEN;
+export async function getDriverToken() {
+  return auth().currentUser?.getIdToken() ?? null;
 }
 
 export async function openGoogleMapsNavigation(lat: number, lng: number) {

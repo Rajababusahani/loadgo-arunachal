@@ -4,10 +4,13 @@
     "slug": "loadgo-arunachal-driver",
     "scheme": "loadgo-driver",
     "plugins": [
-      "expo-router"
+      "expo-dev-client",
+      "expo-router",
+      "@react-native-firebase/app"
     ],
     "android": {
-      "package": "com.loadgo.driver"
+      "package": "com.loadgo.driver",
+      "googleServicesFile": "./google-services.json"
     }
   }
 }

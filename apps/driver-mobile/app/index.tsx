@@ -4,6 +4,7 @@ import * as Location from "expo-location";
 import { SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
 import { statusLabels, type BookingStatus, type VehicleType, vehicleLabels } from "@loadgo/shared";
 import { apiGet, apiPost, openGoogleMapsNavigation } from "../lib/api";
+import { useAuth } from "../providers/auth";
 
 type BookingItem = {
   id: string;
@@ -46,6 +47,7 @@ type MeResponse = {
 const activeStatuses: BookingStatus[] = ["assigned", "arriving", "in_transit"];
 
 export default function DriverHomeScreen() {
+  const { signOutUser } = useAuth();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [offers, setOffers] = useState<DriverOffer[]>([]);
   const [bookings, setBookings] = useState<BookingItem[]>([]);
@@ -179,7 +181,7 @@ export default function DriverHomeScreen() {
             <Text className="text-3xl font-semibold text-white">Driver console</Text>
             <Text className="text-slate-400">Receive jobs, send live location, and manage active rides.</Text>
           </View>
-          <View className="items-center">
+          <View className="items-center gap-2">
             <Switch value={online} onValueChange={(value) => void updateAvailability(value)} disabled={busy === "availability"} />
             <Text className="mt-1 text-xs text-slate-400">{me?.driverProfile?.availability ?? "offline"}</Text>
           </View>
@@ -255,3 +257,5 @@ export default function DriverHomeScreen() {
     </SafeAreaView>
   );
 }
+
+

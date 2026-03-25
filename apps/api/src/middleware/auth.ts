@@ -5,17 +5,28 @@ import { getFirebaseAdmin } from "../config/firebase";
 import { UserModel } from "../models/User";
 import { ApiError } from "../utils/api-error";
 
-async function ensureUser(params: { firebaseUid: string; phone?: string; name?: string; role: UserRole }) {
+async function ensureUser(params: { firebaseUid: string; phone?: string; name?: string; role?: UserRole }) {
   let user = await UserModel.findOne({ firebaseUid: params.firebaseUid });
   if (!user) {
     user = await UserModel.create({
       firebaseUid: params.firebaseUid,
       phone: params.phone ?? "",
       name: params.name ?? "LoadGo User",
-      role: params.role
+      role: params.role ?? "customer"
     });
-  } else if (params.role !== user.role) {
-    user.role = params.role;
+  } else {
+    if (params.phone && params.phone !== user.phone) {
+      user.phone = params.phone;
+    }
+
+    if (params.name && params.name !== user.name) {
+      user.name = params.name;
+    }
+
+    if (params.role && params.role !== user.role) {
+      user.role = params.role;
+    }
+
     await user.save();
   }
 
@@ -51,7 +62,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     }
 
     const decoded = await getFirebaseAdmin().auth().verifyIdToken(token);
-    const claimedRole = typeof decoded.role === "string" ? (decoded.role as UserRole) : "customer";
+    const claimedRole = typeof decoded.role === "string" ? (decoded.role as UserRole) : undefined;
     const user = await ensureUser({
       firebaseUid: decoded.uid,
       phone: decoded.phone_number,

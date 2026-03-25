@@ -14,6 +14,7 @@ import {
 import { VehicleCard } from "../components/VehicleCard";
 import { apiGet, apiPost } from "../lib/api";
 import { useAppPreferences } from "../providers/app-preferences";
+import { useAuth } from "../providers/auth";
 
 type QuoteResponse = {
   quote: {
@@ -45,6 +46,7 @@ const activeStatuses: BookingStatus[] = ["searching", "assigned", "arriving", "i
 export default function HomeScreen() {
   const router = useRouter();
   const { language, toggleLanguage, darkMode, toggleTheme } = useAppPreferences();
+  const { signOutUser } = useAuth();
   const [pickupQuery, setPickupQuery] = useState("");
   const [dropQuery, setDropQuery] = useState("");
   const [pickupLocation, setPickupLocation] = useState<PlaceDetails | null>(null);
@@ -366,3 +368,5 @@ function SuggestionList(props: {
     </View>
   );
 }
+
+

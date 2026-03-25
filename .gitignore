@@ -11,3 +11,5 @@ coverage
 *.log
 android
 ios
+apps/customer-mobile/google-services.json
+apps/driver-mobile/google-services.json

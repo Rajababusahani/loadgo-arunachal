@@ -48,6 +48,27 @@ Provide these values in Render during the first production deploy:
 - `VITE_API_URL` for the admin static site
 - `VITE_ADMIN_TOKEN` only until Firebase-backed admin sign-in is wired on the web client
 
+## Mobile Firebase OTP Setup
+
+The customer and driver Android apps now use native Firebase phone authentication via `@react-native-firebase/auth`.
+
+Before building either app:
+
+1. Create two Android apps in Firebase:
+   - `com.loadgo.customer`
+   - `com.loadgo.driver`
+2. Download each `google-services.json` file.
+3. Place them here:
+   - `apps/customer-mobile/google-services.json`
+   - `apps/driver-mobile/google-services.json`
+4. Enable Phone Authentication in Firebase Console.
+5. Add your Android SHA-1 and SHA-256 fingerprints in Firebase for both apps.
+6. Set `EXPO_PUBLIC_API_URL=https://your-api.onrender.com` in both mobile app `.env` files.
+
+Important:
+- These apps now require a development build or release APK. Expo Go will not work because native Firebase Auth is used.
+- For the driver app, the backend now preserves the server-side role once the driver profile is created, even if the Firebase token has no custom role claim.
+
 ## Deploy Steps For The Real App
 
 1. In Render, create a Blueprint from the repo.
@@ -57,6 +78,20 @@ Provide these values in Render during the first production deploy:
 5. Complete the deploy.
 6. After the backend gets its public URL, set that exact URL as `VITE_API_URL` for the admin site if you did not supply it during creation.
 7. Set `EXPO_PUBLIC_API_URL=https://your-api.onrender.com` in both mobile apps before building Android APKs.
+
+## Android Build Commands
+
+Customer app:
+- `npm run android --workspace @loadgo/customer-mobile`
+
+Driver app:
+- `npm run android --workspace @loadgo/driver-mobile`
+
+For local development with native Firebase Auth:
+- `npm run dev --workspace @loadgo/customer-mobile`
+- `npm run dev --workspace @loadgo/driver-mobile`
+
+These start Expo in dev-client mode.
 
 ## Demo Deploy
 
@@ -69,5 +104,4 @@ If you only want a demo deployment without external services:
 ## Notes
 
 - MongoDB Atlas is external to Render in this setup.
-- The mobile apps still need real Firebase phone auth wired in the client before store-ready launch. The backend already verifies Firebase ID tokens.
 - The backend is currently CORS-open for MVP simplicity. Tighten this before production launch.
