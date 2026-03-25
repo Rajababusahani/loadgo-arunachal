@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import {
-  demoLocations,
-  findDemoLocation,
   paymentLabels,
   statusLabels,
   type BookingStatus,
   type PaymentMethod,
+  type PlaceDetails,
+  type PlaceSuggestion,
   type VehicleType,
   vehicleLabels
 } from "@loadgo/shared";
@@ -45,9 +45,13 @@ const activeStatuses: BookingStatus[] = ["searching", "assigned", "arriving", "i
 export default function HomeScreen() {
   const router = useRouter();
   const { language, toggleLanguage, darkMode, toggleTheme } = useAppPreferences();
-  const [pickup, setPickup] = useState("Naharlagun market");
-  const [drop, setDrop] = useState("Itanagar sector E");
-  const [notes, setNotes] = useState("Near main gate");
+  const [pickupQuery, setPickupQuery] = useState("");
+  const [dropQuery, setDropQuery] = useState("");
+  const [pickupLocation, setPickupLocation] = useState<PlaceDetails | null>(null);
+  const [dropLocation, setDropLocation] = useState<PlaceDetails | null>(null);
+  const [pickupSuggestions, setPickupSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [dropSuggestions, setDropSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [notes, setNotes] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>("mini_truck");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [quote, setQuote] = useState<QuoteResponse["quote"] | null>(null);
@@ -58,8 +62,6 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const activeBooking = useMemo(() => bookings.find((booking) => activeStatuses.includes(booking.status)), [bookings]);
-  const pickupMatches = useMemo(() => filterDemoLocations(pickup), [pickup]);
-  const dropMatches = useMemo(() => filterDemoLocations(drop), [drop]);
 
   useEffect(() => {
     void loadBookings();
@@ -70,6 +72,22 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadSuggestions("pickup", pickupQuery, pickupLocation?.address ?? "");
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [pickupQuery, pickupLocation?.address]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadSuggestions("drop", dropQuery, dropLocation?.address ?? "");
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [dropQuery, dropLocation?.address]);
+
   async function loadBookings() {
     try {
       const response = await apiGet<{ bookings: BookingItem[] }>("/v1/bookings");
@@ -79,11 +97,53 @@ export default function HomeScreen() {
     }
   }
 
+  async function loadSuggestions(kind: "pickup" | "drop", query: string, selectedAddress: string) {
+    const normalized = query.trim();
+    if (normalized.length < 2 || normalized === selectedAddress) {
+      if (kind === "pickup") {
+        setPickupSuggestions([]);
+      } else {
+        setDropSuggestions([]);
+      }
+      return;
+    }
+
+    try {
+      const response = await apiGet<{ suggestions: PlaceSuggestion[] }>(`/v1/locations/autocomplete?q=${encodeURIComponent(normalized)}`);
+      if (kind === "pickup") {
+        setPickupSuggestions(response.suggestions);
+      } else {
+        setDropSuggestions(response.suggestions);
+      }
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Failed to search locations");
+    }
+  }
+
+  async function selectPlace(kind: "pickup" | "drop", suggestion: PlaceSuggestion) {
+    setBusy(`${kind}-place`);
+    setError(null);
+    try {
+      const response = await apiGet<{ place: PlaceDetails }>(`/v1/locations/place/${encodeURIComponent(suggestion.placeId)}`);
+      if (kind === "pickup") {
+        setPickupLocation(response.place);
+        setPickupQuery(response.place.address);
+        setPickupSuggestions([]);
+      } else {
+        setDropLocation(response.place);
+        setDropQuery(response.place.address);
+        setDropSuggestions([]);
+      }
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Failed to select location");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function getQuote() {
-    const pickupLocation = findDemoLocation(pickup);
-    const dropLocation = findDemoLocation(drop);
     if (!pickupLocation || !dropLocation) {
-      setError("Choose pickup and drop from the available Arunachal demo locations.");
+      setError("Select valid pickup and drop suggestions before calculating the fare.");
       return;
     }
 
@@ -93,7 +153,7 @@ export default function HomeScreen() {
     try {
       const response = await apiPost<QuoteResponse>("/v1/locations/quote", {
         pickup: { ...pickupLocation, landmark: notes || pickupLocation.landmark },
-        drop: dropLocation,
+        drop: { ...dropLocation, landmark: dropLocation.landmark },
         vehicleType: selectedVehicle
       });
       setQuote(response.quote);
@@ -105,10 +165,8 @@ export default function HomeScreen() {
   }
 
   async function createBooking() {
-    const pickupLocation = findDemoLocation(pickup);
-    const dropLocation = findDemoLocation(drop);
     if (!pickupLocation || !dropLocation) {
-      setError("Choose pickup and drop from the available demo locations before booking.");
+      setError("Select valid pickup and drop suggestions before creating the booking.");
       return;
     }
 
@@ -118,7 +176,7 @@ export default function HomeScreen() {
     try {
       await apiPost<{ booking: BookingItem }>("/v1/bookings", {
         pickup: { ...pickupLocation, landmark: notes || pickupLocation.landmark },
-        drop: dropLocation,
+        drop: { ...dropLocation, landmark: dropLocation.landmark },
         vehicleType: selectedVehicle,
         paymentMethod,
         notes
@@ -157,7 +215,7 @@ export default function HomeScreen() {
         <View className="mb-6 flex-row items-center justify-between">
           <View>
             <Text className={darkMode ? "text-3xl font-semibold text-white" : "text-3xl font-semibold text-ink"}>LoadGo Arunachal</Text>
-            <Text className={darkMode ? "text-slate-300" : "text-slate-600"}>Live customer booking flow using the running mock API</Text>
+            <Text className={darkMode ? "text-slate-300" : "text-slate-600"}>Book intra-city cargo vehicles with live pricing and tracking.</Text>
           </View>
           <View className="gap-2">
             <TouchableOpacity className="rounded-full bg-brand px-4 py-2" onPress={toggleLanguage}>
@@ -171,28 +229,38 @@ export default function HomeScreen() {
 
         <View className={darkMode ? "mb-5 rounded-3xl bg-slate-900 p-4" : "mb-5 rounded-3xl bg-white p-4"}>
           <Text className={darkMode ? "mb-2 text-sm text-slate-300" : "mb-2 text-sm text-slate-500"}>Pickup</Text>
-          <TextInput value={pickup} onChangeText={setPickup} className={darkMode ? "mb-3 rounded-2xl bg-slate-800 px-4 py-4 text-white" : "mb-3 rounded-2xl bg-slate-100 px-4 py-4 text-slate-900"} />
-          <View className="mb-4 flex-row flex-wrap gap-2">
-            {pickupMatches.map((item) => (
-              <TouchableOpacity key={item.address} className="rounded-full bg-emerald-100 px-3 py-2" onPress={() => setPickup(item.address)}>
-                <Text className="text-xs font-medium text-emerald-900">{item.address}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TextInput
+            value={pickupQuery}
+            onChangeText={(value) => {
+              setPickupQuery(value);
+              setPickupLocation(null);
+              setQuote(null);
+            }}
+            placeholder="Search pickup"
+            placeholderTextColor={darkMode ? "#94a3b8" : "#64748b"}
+            className={darkMode ? "mb-3 rounded-2xl bg-slate-800 px-4 py-4 text-white" : "mb-3 rounded-2xl bg-slate-100 px-4 py-4 text-slate-900"}
+          />
+          <SuggestionList suggestions={pickupSuggestions} onSelect={(item) => void selectPlace("pickup", item)} color="emerald" />
+          {pickupLocation ? <Text className={darkMode ? "mb-4 text-xs text-emerald-300" : "mb-4 text-xs text-emerald-700"}>Selected: {pickupLocation.address}</Text> : null}
 
           <Text className={darkMode ? "mb-2 text-sm text-slate-300" : "mb-2 text-sm text-slate-500"}>Drop</Text>
-          <TextInput value={drop} onChangeText={setDrop} className={darkMode ? "mb-3 rounded-2xl bg-slate-800 px-4 py-4 text-white" : "mb-3 rounded-2xl bg-slate-100 px-4 py-4 text-slate-900"} />
-          <View className="mb-4 flex-row flex-wrap gap-2">
-            {dropMatches.map((item) => (
-              <TouchableOpacity key={item.address} className="rounded-full bg-amber-100 px-3 py-2" onPress={() => setDrop(item.address)}>
-                <Text className="text-xs font-medium text-amber-900">{item.address}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TextInput
+            value={dropQuery}
+            onChangeText={(value) => {
+              setDropQuery(value);
+              setDropLocation(null);
+              setQuote(null);
+            }}
+            placeholder="Search drop"
+            placeholderTextColor={darkMode ? "#94a3b8" : "#64748b"}
+            className={darkMode ? "mb-3 rounded-2xl bg-slate-800 px-4 py-4 text-white" : "mb-3 rounded-2xl bg-slate-100 px-4 py-4 text-slate-900"}
+          />
+          <SuggestionList suggestions={dropSuggestions} onSelect={(item) => void selectPlace("drop", item)} color="amber" />
+          {dropLocation ? <Text className={darkMode ? "mb-4 text-xs text-amber-300" : "mb-4 text-xs text-amber-700"}>Selected: {dropLocation.address}</Text> : null}
 
           <Text className={darkMode ? "mb-2 text-sm text-slate-300" : "mb-2 text-sm text-slate-500"}>Landmark / note</Text>
-          <TextInput value={notes} onChangeText={setNotes} className={darkMode ? "rounded-2xl bg-slate-800 px-4 py-4 text-white" : "rounded-2xl bg-slate-100 px-4 py-4 text-slate-900"} />
-          <Text className={darkMode ? "mt-3 text-sm text-slate-400" : "mt-3 text-sm text-slate-600"}>Autocomplete is simulated from local Arunachal demo locations in mock mode.</Text>
+          <TextInput value={notes} onChangeText={setNotes} placeholder="Near landmark or shop" placeholderTextColor={darkMode ? "#94a3b8" : "#64748b"} className={darkMode ? "rounded-2xl bg-slate-800 px-4 py-4 text-white" : "rounded-2xl bg-slate-100 px-4 py-4 text-slate-900"} />
+          <Text className={darkMode ? "mt-3 text-sm text-slate-400" : "mt-3 text-sm text-slate-600"}>Search through Google Places suggestions, then add a manual landmark if needed.</Text>
         </View>
 
         <Text className={darkMode ? "mb-3 text-lg font-semibold text-white" : "mb-3 text-lg font-semibold text-ink"}>Choose vehicle</Text>
@@ -249,7 +317,7 @@ export default function HomeScreen() {
         {error ? <Text className="mt-4 text-sm font-medium text-red-600">{error}</Text> : null}
 
         <View className="mt-6 flex-row gap-3">
-          <TouchableOpacity className="flex-1 rounded-2xl bg-accent px-4 py-4" disabled={loadingQuote} onPress={() => void getQuote()}>
+          <TouchableOpacity className="flex-1 rounded-2xl bg-accent px-4 py-4" disabled={loadingQuote || busy === "pickup-place" || busy === "drop-place"} onPress={() => void getQuote()}>
             <Text className="text-center text-base font-semibold text-slate-900">{loadingQuote ? "Calculating..." : "Get fare"}</Text>
           </TouchableOpacity>
           <TouchableOpacity className="flex-1 rounded-2xl bg-brand px-4 py-4" disabled={busy === "book"} onPress={() => void createBooking()}>
@@ -274,11 +342,27 @@ export default function HomeScreen() {
   );
 }
 
-function filterDemoLocations(input: string) {
-  const normalized = input.trim().toLowerCase();
-  if (!normalized) {
-    return demoLocations;
+function SuggestionList(props: {
+  suggestions: PlaceSuggestion[];
+  onSelect: (item: PlaceSuggestion) => void;
+  color: "emerald" | "amber";
+}) {
+  if (!props.suggestions.length) {
+    return null;
   }
 
-  return demoLocations.filter((item) => item.address.toLowerCase().includes(normalized)).slice(0, 4);
+  const classes = props.color === "emerald"
+    ? { background: "bg-emerald-100", text: "text-emerald-900" }
+    : { background: "bg-amber-100", text: "text-amber-900" };
+
+  return (
+    <View className="mb-4 gap-2">
+      {props.suggestions.slice(0, 4).map((item) => (
+        <TouchableOpacity key={item.placeId} className={`rounded-2xl px-3 py-3 ${classes.background}`} onPress={() => props.onSelect(item)}>
+          <Text className={`text-sm font-semibold ${classes.text}`}>{item.primaryText}</Text>
+          <Text className={`mt-1 text-xs ${classes.text}`}>{item.secondaryText || item.description}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
+import * as Location from "expo-location";
 import { SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
-import { demoLocations, statusLabels, type BookingStatus, type VehicleType, vehicleLabels } from "@loadgo/shared";
+import { statusLabels, type BookingStatus, type VehicleType, vehicleLabels } from "@loadgo/shared";
 import { apiGet, apiPost, openGoogleMapsNavigation } from "../lib/api";
 
 type BookingItem = {
@@ -78,18 +79,34 @@ export default function DriverHomeScreen() {
     }
   }
 
+  async function resolveCurrentLocation() {
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (!permission.granted) {
+      throw new Error("Location permission is required for driver availability and tracking.");
+    }
+
+    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    return {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      accuracy: position.coords.accuracy ?? 20,
+      heading: position.coords.heading ?? undefined,
+      speed: position.coords.speed ?? undefined
+    };
+  }
+
   async function updateAvailability(nextOnline: boolean) {
     setBusy("availability");
     setError(null);
     try {
-      const location = demoLocations[0];
+      const location = nextOnline ? await resolveCurrentLocation() : null;
       await apiPost("/v1/drivers/availability", {
         availability: nextOnline ? "online" : "offline",
-        location: {
+        location: location ? {
           lat: location.lat,
           lng: location.lng,
-          address: location.address
-        }
+          address: me?.driverProfile?.currentAddress
+        } : undefined
       });
       await loadDriverState();
     } catch (caughtError) {
@@ -137,14 +154,14 @@ export default function DriverHomeScreen() {
     setBusy("tracking");
     setError(null);
     try {
-      const location = getTrackingPoint(activeBooking.status);
+      const location = await resolveCurrentLocation();
       await apiPost("/v1/drivers/tracking", {
         bookingId: activeBooking.id,
         lat: location.lat,
         lng: location.lng,
-        accuracy: 12,
-        speed: activeBooking.status === "in_transit" ? 18 : 6,
-        heading: 90
+        accuracy: location.accuracy,
+        speed: location.speed,
+        heading: location.heading
       });
       await loadDriverState();
     } catch (caughtError) {
@@ -160,7 +177,7 @@ export default function DriverHomeScreen() {
         <View className="flex-row items-center justify-between">
           <View>
             <Text className="text-3xl font-semibold text-white">Driver console</Text>
-            <Text className="text-slate-400">Live offers, ride state, and earnings for the mock driver</Text>
+            <Text className="text-slate-400">Receive jobs, send live location, and manage active rides.</Text>
           </View>
           <View className="items-center">
             <Switch value={online} onValueChange={(value) => void updateAvailability(value)} disabled={busy === "availability"} />
@@ -190,7 +207,7 @@ export default function DriverHomeScreen() {
               {activeBooking.status === "arriving" ? <TouchableOpacity className="rounded-2xl bg-accent px-4 py-3" disabled={busy === "start"} onPress={() => void handleRideAction("start")}><Text className="font-semibold text-slate-900">Start ride</Text></TouchableOpacity> : null}
               {activeBooking.status === "in_transit" ? <TouchableOpacity className="rounded-2xl bg-accent px-4 py-3" disabled={busy === "complete"} onPress={() => void handleRideAction("complete")}><Text className="font-semibold text-slate-900">Complete ride</Text></TouchableOpacity> : null}
               <TouchableOpacity className="rounded-2xl border border-slate-700 px-4 py-3" disabled={busy === "tracking"} onPress={() => void sendTrackingPing()}>
-                <Text className="font-semibold text-white">Send tracking ping</Text>
+                <Text className="font-semibold text-white">Send live location</Text>
               </TouchableOpacity>
               <TouchableOpacity className="rounded-2xl border border-slate-700 px-4 py-3" onPress={() => void openGoogleMapsNavigation(activeBooking.drop.lat, activeBooking.drop.lng)}>
                 <Text className="font-semibold text-white">Navigate</Text>
@@ -217,7 +234,7 @@ export default function DriverHomeScreen() {
                 </View>
               </View>
             </View>
-          )) : <View className="rounded-3xl bg-slate-900 p-4"><Text className="text-slate-300">No pending offers. Seed demo data or set the driver online.</Text></View>}
+          )) : <View className="rounded-3xl bg-slate-900 p-4"><Text className="text-slate-300">No pending offers. Keep the driver online and wait for bookings.</Text></View>}
         </View>
 
         <View className="mt-6 flex-row gap-3">
@@ -237,16 +254,4 @@ export default function DriverHomeScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-function getTrackingPoint(status: BookingStatus) {
-  if (status === "assigned") {
-    return demoLocations[0];
-  }
-
-  if (status === "arriving") {
-    return { ...demoLocations[0], lat: 27.098, lng: 93.664 };
-  }
-
-  return { ...demoLocations[1], lat: 27.0905, lng: 93.642 };
 }

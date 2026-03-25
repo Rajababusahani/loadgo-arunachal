@@ -1,16 +1,24 @@
 import { Linking } from "react-native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:4000";
-const DRIVER_TOKEN = process.env.EXPO_PUBLIC_DRIVER_TOKEN ?? "dev-driver";
+const DRIVER_TOKEN = process.env.EXPO_PUBLIC_DRIVER_TOKEN ?? "";
 
 type JsonBody = Record<string, unknown> | undefined;
+
+function getAuthHeaders() {
+  if (!DRIVER_TOKEN) {
+    throw new Error("Driver auth token is missing. Set EXPO_PUBLIC_DRIVER_TOKEN or wire Firebase phone auth.");
+  }
+
+  return { Authorization: `Bearer ${DRIVER_TOKEN}` };
+}
 
 async function request<T>(path: string, init?: RequestInit, body?: JsonBody): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${DRIVER_TOKEN}`,
+      ...getAuthHeaders(),
       ...(init?.headers ?? {})
     },
     body: body ? JSON.stringify(body) : init?.body

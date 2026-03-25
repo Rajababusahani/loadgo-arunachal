@@ -85,7 +85,7 @@ export default function TrackingScreen() {
           <Text className={darkMode ? "mt-2 text-slate-400" : "mt-2 text-slate-600"}>Last booking update {freshness}. Driver position appears here after the driver app sends tracking pings.</Text>
           <View className="mt-4 rounded-2xl bg-slate-100 p-4">
             <Text className="text-sm text-slate-500">Support</Text>
-            <Text className="mt-1 text-base font-semibold text-slate-900">Call/chat hooks are reserved for the Firebase-enabled build. Mock mode focuses on booking state and tracking refresh.</Text>
+            <Text className="mt-1 text-base font-semibold text-slate-900">Driver contact and richer realtime hooks can be enabled once Firebase Auth and notification flows are configured.</Text>
           </View>
           {["searching", "assigned"].includes(booking.status) ? (
             <TouchableOpacity className="mt-4 rounded-2xl border border-red-300 px-4 py-4" onPress={() => void cancelBooking()}>
@@ -96,7 +96,7 @@ export default function TrackingScreen() {
       ) : (
         <View className={darkMode ? "mt-5 rounded-3xl bg-slate-900 p-5" : "mt-5 rounded-3xl bg-white p-5"}>
           <Text className={darkMode ? "text-lg font-semibold text-white" : "text-lg font-semibold text-ink"}>No active booking</Text>
-          <Text className={darkMode ? "mt-2 text-slate-400" : "mt-2 text-slate-600"}>Create a booking from the home screen, or seed demo data from the admin dashboard first.</Text>
+          <Text className={darkMode ? "mt-2 text-slate-400" : "mt-2 text-slate-600"}>Create a booking from the home screen to start tracking your driver.</Text>
           <Link href="/" asChild>
             <TouchableOpacity className="mt-4 rounded-2xl bg-brand px-4 py-4">
               <Text className="text-center font-semibold text-white">Back to booking</Text>
@@ -108,3 +108,4 @@ export default function TrackingScreen() {
     </SafeAreaView>
   );
 }
+

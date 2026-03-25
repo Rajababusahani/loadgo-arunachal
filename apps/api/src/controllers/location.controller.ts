@@ -1,12 +1,18 @@
 import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler";
-import { fetchDistanceAndDuration, fetchPlaceSuggestions } from "../services/maps.service";
+import { fetchDistanceAndDuration, fetchPlaceDetails, fetchPlaceSuggestions } from "../services/maps.service";
 import { buildPricingBreakdown } from "../services/pricing.service";
 
 const autocompleteSchema = z.object({
   body: z.object({}),
   params: z.object({}),
   query: z.object({ q: z.string().min(2) })
+});
+
+const placeDetailsSchema = z.object({
+  body: z.object({}),
+  params: z.object({ placeId: z.string().min(1) }),
+  query: z.object({})
 });
 
 const quoteSchema = z.object({
@@ -31,12 +37,18 @@ const quoteSchema = z.object({
 
 export const locationValidators = {
   autocomplete: autocompleteSchema,
+  placeDetails: placeDetailsSchema,
   quote: quoteSchema
 };
 
 export const autocomplete = asyncHandler(async (req, res) => {
   const suggestions = await fetchPlaceSuggestions(String(req.query.q));
   res.json({ suggestions });
+});
+
+export const placeDetails = asyncHandler(async (req, res) => {
+  const place = await fetchPlaceDetails(String(req.params.placeId));
+  res.json({ place });
 });
 
 export const getQuote = asyncHandler(async (req, res) => {

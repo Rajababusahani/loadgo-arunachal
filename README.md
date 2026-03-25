@@ -16,6 +16,10 @@ Monorepo for the LoadGo Arunachal MVP:
 4. Start the backend with `npm run dev --workspace @loadgo/api`.
 5. Start each frontend from its workspace after setting env values.
 
+## Deployment Modes
+
+- `render.yaml`: production-first Render blueprint for the real app
+- `render.demo.yaml`: demo-only Render blueprint with mock services enabled
+
 See `docs/deployment.md` for deployment details and environment setup.
 See `docs/local-dev.md` for the local mock-mode workflow and dev tokens.
-See `render.yaml` for the Render blueprint used to deploy the API and admin dashboard.

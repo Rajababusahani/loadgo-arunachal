@@ -95,7 +95,7 @@ export default function App() {
       setSeedSummary(response.summary);
       await loadDashboard();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Failed to seed demo data");
+      setError(caughtError instanceof Error ? caughtError.message : "Failed to seed test data");
     } finally {
       setBusy(null);
     }
@@ -148,9 +148,9 @@ export default function App() {
         <div>
           <p className="eyebrow">LoadGo Arunachal</p>
           <h1>Marketplace control room</h1>
-          <p className="subcopy">Live admin dashboard for mock-mode demos. Seed the system, review drivers, adjust pricing, and watch booking activity from the running API.</p>
+          <p className="subcopy">Admin dashboard for operations, pricing, and driver approvals. Seed tools are only for test environments.</p>
           <div className="hero-actions">
-            <button disabled={busy === "seed"} onClick={() => void handleSeed(false)}>Seed demo data</button>
+            <button disabled={busy === "seed"} onClick={() => void handleSeed(false)}>Seed test data</button>
             <button className="secondary" disabled={busy === "seed"} onClick={() => void handleSeed(true)}>Reset and reseed</button>
             <button className="secondary" disabled={loading} onClick={() => void loadDashboard()}>Refresh</button>
           </div>
@@ -195,7 +195,7 @@ export default function App() {
                 <span>{booking.status}</span>
                 <strong>INR {booking.finalPrice}</strong>
               </div>
-            )) : <p className="empty-state">No bookings yet. Seed demo data to create sample rides.</p>}
+            )) : <p className="empty-state">No bookings yet. Seed test data to create sample rides.</p>}
           </div>
         </article>
 
@@ -247,3 +247,4 @@ export default function App() {
     </main>
   );
 }
+

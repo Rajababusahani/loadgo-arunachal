@@ -12,6 +12,10 @@ export interface PlaceSuggestion {
   description: string;
 }
 
+export interface PlaceDetails extends LocationPoint {
+  placeId: string;
+}
+
 export interface TrackingEvent {
   bookingId: string;
   driverId: string;
