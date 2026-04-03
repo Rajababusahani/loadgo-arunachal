@@ -62,12 +62,25 @@ Before building either app:
    - `apps/customer-mobile/google-services.json`
    - `apps/driver-mobile/google-services.json`
 4. Enable Phone Authentication in Firebase Console.
-5. Add your Android SHA-1 and SHA-256 fingerprints in Firebase for both apps.
-6. Set `EXPO_PUBLIC_API_URL=https://your-api.onrender.com` in both mobile app `.env` files.
+5. Enable Firebase Realtime Database.
+6. Add your Android SHA-1 and SHA-256 fingerprints in Firebase for both apps.
+7. Set `EXPO_PUBLIC_API_URL=https://your-api.onrender.com` in both mobile app `.env` files.
 
 Important:
 - These apps now require a development build or release APK. Expo Go will not work because native Firebase Auth is used.
 - For the driver app, the backend now preserves the server-side role once the driver profile is created, even if the Firebase token has no custom role claim.
+
+## Preflight Check
+
+Run this before production deployment:
+
+- `npm run preflight`
+
+It checks for:
+- required backend env values
+- mobile `.env` files
+- admin `.env` file
+- both `google-services.json` files
 
 ## Deploy Steps For The Real App
 
@@ -78,13 +91,14 @@ Important:
 5. Complete the deploy.
 6. After the backend gets its public URL, set that exact URL as `VITE_API_URL` for the admin site if you did not supply it during creation.
 7. Set `EXPO_PUBLIC_API_URL=https://your-api.onrender.com` in both mobile apps before building Android APKs.
+8. Run `npm run preflight` from the repo root and resolve any missing items.
 
 ## Android Build Commands
 
-Customer app:
+Customer app local Android build:
 - `npm run android --workspace @loadgo/customer-mobile`
 
-Driver app:
+Driver app local Android build:
 - `npm run android --workspace @loadgo/driver-mobile`
 
 For local development with native Firebase Auth:
@@ -92,6 +106,13 @@ For local development with native Firebase Auth:
 - `npm run dev --workspace @loadgo/driver-mobile`
 
 These start Expo in dev-client mode.
+
+## EAS Build Profiles
+
+Each mobile app now includes an `eas.json` file with:
+- `development`: dev client build
+- `preview`: internal distribution build
+- `production`: production build profile
 
 ## Demo Deploy
 
